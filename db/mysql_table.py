@@ -65,13 +65,14 @@ def table_b():
             cursor.connection.commit()
 
 def main():
+    table_s_c()
     # table_b()
-    cursor.execute("SELECT * FROM stickers WHERE category  = %s", ('猫眼三姐妹'))
-    result = cursor.fetchall()
-    print(result)
-    for it in result:
-        cid = it[0]
-    print(cid)
+    # cursor.execute("SELECT * FROM stickers WHERE category  = %s", ('猫眼三姐妹'))
+    # result = cursor.fetchall()
+    # print(result)
+    # for it in result:
+    #     cid = it[0]
+    # print(cid)
     # cursor.execute("INSERT INTO belong (sid, cid) VALUES (%s, %s)", (sid, cid))
     # cursor.connection.commit()
     conn.close()
