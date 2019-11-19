@@ -1,0 +1,21 @@
+CREATE TABLE stickers (
+    sid BIGINT(7) NOT NULL AUTO_INCREMENT, 
+    url VARCHAR(255),
+    filename VARCHAR(100),
+    category VARCHAR(100),
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    PRIMARY KEY (sid));
+
+CREATE TABLE categories (
+    cid BIGINT(7) NOT NULL AUTO_INCREMENT,
+    category VARCHAR(100),
+    folder VARCHAR(100),
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    PRIMARY KEY (cid));
+
+CREATE TABLE belong (
+    bid BIGINT(7) NOT NULL AUTO_INCREMENT,
+    sid BIGINT(7),
+    cid BIGINT(7),
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    PRIMARY KEY (bid));
