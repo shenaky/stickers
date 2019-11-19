@@ -22,7 +22,7 @@ def hello():
 '''
 /**
 * showdoc
-* @catalog 接口/获取表情包分类
+* @catalog 接口
 * @title 获取表情包分类
 * @description 获取表情包分类的接口
 * @method get
@@ -31,7 +31,6 @@ def hello():
 * @return_param code int 状态
 * @return_param cid int 分类id
 * @return_param category string 分类名称
-* @number 99 
 */
 '''
 
@@ -57,18 +56,42 @@ def get_categories():
     else:
         return '这是一个get请求'
 
+'''
+/**
+* showdoc
+* @catalog 接口
+* @title 获取一类表情包的url
+* @description 获取一类表情包的url的接口
+* @method get
+* @url http://111.230.153.254/api/category/<int:cid>
+* @return {"code":0,"cid" : 12, "data":[{"sid":1,"url":"http://111.230.153.254/large/052Squirtle_%E6%9D%B0%E5%B0%BC%E9%BE%9F/Squirtle22.JPG"},{"cid":"1","url":"http://111.230.153.254/large/052Squirtle_%E6%9D%B0%E5%B0%BC%E9%BE%9F/Squirtle22.JPG"}]}
+* @return_param code int 状态
+* @return_param cid int 分类id
+* @return_param sid int 表情id
+* @return_param url string url
+*/
+'''
+
 @app.route('/api/category/<int:cid>', methods=['GET'])
 def get_category(cid):
     try:
         with conn.cursor() as cursor:
-            sql = 'SELECT cid,category FROM categories'
-            cursor.execute(sql)
+            sql = 'SELECT sid,url FROM stickers WHERE sid IN (SELECT sid FROM belong WHERE cid = %s)'
+            cursor.execute(sql, (cid))
             resultall = cursor.fetchall()
             print(resultall)
         conn.commit()
     finally:
         cursor.close()
-    return jsonify({'task': resultall})
+    list = []
+    for item in resultall:
+        dict = {}
+        dict['sid'] = item[0]
+        dict['url'] = item[1]
+        list.append(dict)
+    return jsonify({'code' : 0, 'cid' : cid, 'data': list})
+    
+    # return jsonify({'task': resultall})
 
 @app.route('/collection', methods=['GET', 'POST'])
 def get_collection():
