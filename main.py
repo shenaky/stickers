@@ -19,7 +19,21 @@ cursor =conn.cursor()
 def hello():
     return "<h1 style='color:blue'>Hello Tsdfhere!</h1>"
 
-@app.route('/category', methods=['GET', 'POST'])
+
+# showdoc
+# @catalog 接口/获取表情包分类
+# @title 获取表情包分类
+# @description 获取表情包分类的接口
+# @method get
+# @url http://111.230.153.254/api/category
+# @return {"code":0,"data":[{"cid":1,"category":"杰尼龟"},{"cid":"1","category":"杰尼龟"}]}
+# @return_param code int 状态
+# @return_param cid int 分类id
+# @return_param category string 分类名称
+# @number 99 
+
+
+@app.route('/api/category', methods=['GET', 'POST'])
 def get_categories():
     if request.method == 'GET':
         try:
@@ -37,11 +51,11 @@ def get_categories():
             dict['category'] = item[1]
             dict['cid'] = item[0]
             list.append(dict)
-        return jsonify({'code' : 0, 'categories': list})
+        return jsonify({'code' : 0, 'data': list})
     else:
         return '这是一个get请求'
 
-@app.route('/category/<int:cid>', methods=['GET'])
+@app.route('/api/category/<int:cid>', methods=['GET'])
 def get_category(cid):
     try:
         with conn.cursor() as cursor:
