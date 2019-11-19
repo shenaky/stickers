@@ -19,19 +19,21 @@ cursor =conn.cursor()
 def hello():
     return "<h1 style='color:blue'>Hello Tsdfhere!</h1>"
 
-
-# showdoc
-# @catalog 接口/获取表情包分类
-# @title 获取表情包分类
-# @description 获取表情包分类的接口
-# @method get
-# @url http://111.230.153.254/api/category
-# @return {"code":0,"data":[{"cid":1,"category":"杰尼龟"},{"cid":"1","category":"杰尼龟"}]}
-# @return_param code int 状态
-# @return_param cid int 分类id
-# @return_param category string 分类名称
-# @number 99 
-
+'''
+/**
+* showdoc
+* @catalog 接口/获取表情包分类
+* @title 获取表情包分类
+* @description 获取表情包分类的接口
+* @method get
+* @url http://111.230.153.254/api/category
+* @return {"code":0,"data":[{"cid":1,"category":"杰尼龟"},{"cid":"1","category":"杰尼龟"}]}
+* @return_param code int 状态
+* @return_param cid int 分类id
+* @return_param category string 分类名称
+* @number 99 
+*/
+'''
 
 @app.route('/api/category', methods=['GET', 'POST'])
 def get_categories():
