@@ -21,10 +21,10 @@ def table_s_c():
         category = dict['category']
         filenames = dict['meme']
         # try:
-        cursor.execute("SELECT * FROM categories WHERE category = \"%s\"", (category))
+        cursor.execute("SELECT * FROM categories WHERE category = %s", (category))
         if cursor.rowcount == 0:
             print('ss')
-            cursor.execute("INSERT INTO categories (category, folder) VALUES (\"%s\", \"%s\")", (category, folder))
+            cursor.execute("INSERT INTO categories (category, folder) VALUES (%s, %s)", (category, folder))
             cursor.connection.commit()
         # except:
         #     print("sql error")
@@ -36,7 +36,7 @@ def table_s_c():
             # try:
             cursor.execute("SELECT * FROM stickers WHERE filename = %s", (filename))
             if cursor.rowcount == 0:
-                cursor.execute("INSERT INTO stickers (url, category, filename) VALUES (\"%s\", \"%s\", \"%s\")", (url, category, filename))
+                cursor.execute("INSERT INTO stickers (url, category, filename) VALUES (%s, %s, %s)", (url, category, filename))
                 cursor.connection.commit()
             # except:
             #     print("sql error")
@@ -54,19 +54,28 @@ def table_b():
         sid= item[0]
         category = item[1]
         print(category)
-        cursor.execute("SELECT * FROM categories WHERE category  = \"%s\"", (category))
+        cursor.execute("SELECT * FROM categories WHERE category  = %s", (category))
         if cursor.rowcount == 0:
             print('0') 
         result = cursor.fetchall()
         print(result)
         for it in result:
             cid = it[0]
-            cursor.execute("INSERT INTO belong (sid, cid) VALUES (\"%s\", \"%s\")", (sid, cid))
+            cursor.execute("INSERT INTO belong (sid, cid) VALUES (%s, %s)", (sid, cid))
             cursor.connection.commit()
 
 def main():
-    table_b()
+    # table_b()
+    cursor.execute("SELECT * FROM stickers WHERE category  = %s", ('猫眼三姐妹'))
+    result = cursor.fetchall()
+    print(result)
+    for it in result:
+        cid = it[0]
+    print(cid)
+    # cursor.execute("INSERT INTO belong (sid, cid) VALUES (%s, %s)", (sid, cid))
+    # cursor.connection.commit()
     conn.close()
+    
 
 if __name__ == "__main__":
     main()
