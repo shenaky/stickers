@@ -37,10 +37,11 @@ def hello():
 
 @app.route('/api/home', methods=['GET'])
 def get_home():
+    limit = 100
     try:
         with conn.cursor() as cursor:
-            sql = 'SELECT sid,url FROM stickers'
-            cursor.execute(sql)
+            sql = 'SELECT sid,url FROM stickers ORDER BY RAND() LIMIT %s'
+            cursor.execute(sql, (limit))
             resultall = cursor.fetchall()
             # print(resultall)
         conn.commit()
@@ -52,7 +53,7 @@ def get_home():
         dict['sid'] = item[0]
         dict['url'] = item[1]
         list.append(dict)
-    shuffle(list)
+    # shuffle(list) 
     return jsonify({'code' : 0, 'data': list})
 
 '''
