@@ -37,7 +37,7 @@ def hello():
 
 @app.route('/api/home', methods=['GET'])
 def get_home():
-    limit = 100
+    limit = 18
     try:
         with conn.cursor() as cursor:
             sql = 'SELECT sid,url FROM stickers ORDER BY RAND() LIMIT %s'
@@ -153,6 +153,14 @@ def download(filename):
         if os.path.isfile(os.path.join('test', filename)):
             return send_from_directory('test', filename, as_attachment=True)
         pass
+
+# @app.route('/images/<string:folder>/<string:filename>', methods=['GET'])
+# def get_download(filename):
+#     file_dir = os.path.join(basedir, app.config['IMAGE_FOLDER'])
+#     if request.method == "GET":
+#         if os.path.isfile(os.path.join('test', filename)):
+#             return send_from_directory('test', filename, as_attachment=True)
+#         pass
 
 
 # show photo
