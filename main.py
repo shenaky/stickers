@@ -22,6 +22,22 @@ cursor =conn.cursor()
 def hello():
     return "<h1 style='color:blue'>Hello Tsdfhere!</h1>"
 
+'''
+/**
+* showdoc
+* @catalog 用户相关
+* @title 用户登录
+* @description 用户登录的接口
+* @method post
+* @url  http://111.230.153.254/api/login
+* @param js_code 必选 string 登录时获取的 code
+* @return {"code":0,"msg":"success","token":"tokentoken"}
+* @return_param code int 状态
+* @return_param msg string 消息
+* @return_param token string token
+* @number 1
+*/
+'''
 @app.route("/api/login",methods=["POST"])
 def login():
     '''
@@ -41,8 +57,8 @@ def login():
     #校验参数
     url = 'https://api.weixin.qq.com/sns/jscode2session'
     querystring = {
-            "appid": appid,
-            "secret": secret,
+            "appid": "wxd257872efc01ad6c",
+            "secret": "8b48a7c1e2c68c6f7c78546a22e2c48f",
             "js_code": js_code,
             "grant_type": "authorization_code"
         }
@@ -51,11 +67,11 @@ def login():
     try:
         openid = r.json()['openid']
     except:
-        print
+        return jsonify(code = 4103,msg = "openid获取失败")
     
     try:
         with conn.cursor() as cursor:
-            sql = 'SELECT uid FROM user WHERE openid = %s'
+            sql = 'SELECT uid FROM users WHERE openid = %s'
             cursor.execute(sql, (openid))
             result = cursor.fetchone()
         conn.commit()
@@ -63,7 +79,7 @@ def login():
         cursor.close()
     if not result:
         try:
-            cursor.execute("INSERT INTO user (openid) VALUES (%s)", (openid))
+            cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid))
             cursor.connection.commit()
         except:
             print("sql insert error")
@@ -73,9 +89,11 @@ def login():
     
     #创建token
     token = create_token(openid)
+    print(token)
 
     #把token返回给前端
-    return jsonify(code=0,msg="succeed",data=token)
+    # return jsonify(code=0,msg="succeed",data=token)
+    return jsonify({'code' : 0, 'msg': 'success', 'token': list})
 
 '''
 /**
