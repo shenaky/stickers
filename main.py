@@ -240,8 +240,15 @@ def get_make():
         return '这是一个get请求 m'
 
 @app.route('/api/collection', methods=['GET','DELETE','POST'])
+@login_required
 def get_allfiles():
-    uid = 4567
+
+    token = request.headers["token"]
+    uid = verify_token(token)
+    print(uid)
+    if not uid:
+        return jsonify(code = 4100,msg = "token过期")
+
     if request.method == 'GET':
         try:
             with conn.cursor() as cursor:
@@ -294,6 +301,7 @@ def get_allfiles():
 
 
 @app.route('/api/collection/<int:collect_id>', methods=['GET','DELETE','POST'])
+@login_required
 def get_file(collect_id):
     if request.method == 'GET':
         try:
