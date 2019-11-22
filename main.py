@@ -48,7 +48,7 @@ def login():
         js_code = request.args.get('js_code')
     except:
         return jsonify(code = 4103,msg = "未接收到参数")
-
+    print(js_code)
     
     #校验参数
     url = 'https://api.weixin.qq.com/sns/jscode2session'
@@ -59,10 +59,13 @@ def login():
             "grant_type": "authorization_code"
         }
     r = requests.get(url, params=querystring)
+    print(r.text)
+    print(r.json())
     errcode = r.json()['errcode']
     try:
         openid = r.json()['openid']
     except:
+        print(r.json())
         return jsonify(code = 4103,msg = "openid获取失败")
     
     try:
