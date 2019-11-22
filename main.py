@@ -44,15 +44,11 @@ def login():
     用户登录
     :return:token
     '''
-    res_dir = request.get_json()
-    if res_dir is None:
-        #这里的code，依然推荐用一个文件管理状态
+    try:
+        js_code = request.args.get('js_code')
+    except:
         return jsonify(code = 4103,msg = "未接收到参数")
-    
-    #获取前端传过来的参数
-    appid = res_dir.get("code")
-    secret = res_dir.get("secret")
-    js_code = res_dir.get("js_code")
+
     
     #校验参数
     url = 'https://api.weixin.qq.com/sns/jscode2session'
