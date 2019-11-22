@@ -44,15 +44,25 @@ def login():
     用户登录
     :return:token
     '''
-    try:
-        js_code = request.args.get('js_code')
-    except:
+    res_dir = request.get_json()
+    if res_dir is None:
+        #这里的code，依然推荐用一个文件管理状态
         return jsonify(code = 4103,msg = "未接收到参数")
+    
+    #获取前端传过来的参数
+    js_code = res_dir.get("js_code")
     print(js_code)
+    # try:
+    #     js_code = request.args.get('js_code')
+    # except:
+    #     return jsonify(code = 4103,msg = "未接收到参数")
+    # print(js_code)
     
     #校验参数
     url = 'https://api.weixin.qq.com/sns/jscode2session'
     querystring = {
+            # "appid": "wx1f343a5a5e9d83e6",
+            # "secret": "c9b6db0afb01037e9371241a1ea6b11b",
             "appid": "wxd257872efc01ad6c",
             "secret": "8b48a7c1e2c68c6f7c78546a22e2c48f",
             "js_code": js_code,
@@ -61,7 +71,6 @@ def login():
     r = requests.get(url, params=querystring)
     print(r.text)
     print(r.json())
-    errcode = r.json()['errcode']
     try:
         openid = r.json()['openid']
     except:
@@ -230,6 +239,110 @@ def get_make():
         print(request.json())
         return '这是一个get请求 m'
 
+@app.route('/api/collection', methods=['GET','DELETE','POST'])
+def get_allfiles():
+    uid = 4567
+    if request.method == 'GET':
+        try:
+            with conn.cursor() as cursor:
+                sql = 'SELECT collect_id,collect_name FROM collection WHERE uid = %s'
+                cursor.execute(sql,(uid))
+                resultall = cursor.fetchall()
+        finally:
+            cursor.close()
+        list = []
+        for item in resultall:
+            dict = {}
+            dict['collect_id'] = item[0]
+            dict['collect_name'] = item[1]
+            list.append(dict)
+        return jsonify({'code' : 0, 'data': list})
+
+    elif request.method == 'DELETE':
+        res_dir = request.get_json()
+        if res_dir is None:
+            return jsonify(code = 4103,msg = "未接收到参数")
+        collect_id = res_dir.get("collect_id")
+        try:
+            with conn.cursor() as cursor:
+                sql = 'delete from collection where collect_id = %s'
+                effect_row = cursor.execute(sql,(collect_id))
+                sql = 'delete from collect where collect_id = %s'
+                effect_row = cursor.execute(sql,(collect_id))
+                conn.commit()
+                #print(effect_row) 
+        finally:
+            cursor.close()
+        print(effect_row)
+        return jsonify({'code' : 0, 'msg': 'succeed'})
+
+    elif request.method == 'POST':
+        res_dir = request.get_json()
+        if res_dir is None:
+            return jsonify(code = 4103,msg = "未接收到参数")
+        collect_name = res_dir.get("collect_name")
+        try:
+            with conn.cursor() as cursor:
+                sql = "INSERT INTO collection (uid, collect_name) VALUES (%s, %s)"
+                effect_row = cursor.execute(sql,(uid, collect_name))
+                conn.commit()
+        finally: 
+            cursor.close()
+        print(effect_row)
+        return jsonify({'code' : 0, 'msg': 'succeed'})
+
+
+
+@app.route('/api/collection/<int:collect_id>', methods=['GET','DELETE','POST'])
+def get_file(collect_id):
+    if request.method == 'GET':
+        try:
+            with conn.cursor() as cursor:
+                sql = 'SELECT coid,stickers.sid,url FROM collect,stickers WHERE stickers.sid = collect.sid AND collect_id = %s'
+                cursor.execute(sql,(collect_id))
+                resultall = cursor.fetchall()
+        finally:
+            cursor.close()
+        list = []
+        for item in resultall:
+            dict = {}
+            dict['coid'] = item[0]
+            dict['sid'] = item[1]
+            dict['url'] = item[2]
+            list.append(dict)
+        return jsonify({'code' : 0, 'data': list})
+    
+
+    elif request.method == 'POST':
+        res_dir = request.get_json()
+        if res_dir is None:
+            return jsonify(code = 4103,msg = "未接收到参数")
+        sid = res_dir.get("sid")
+        try:
+            with conn.cursor() as cursor:
+                sql = "INSERT INTO collect (collect_id, sid) VALUES (%s, %s)"
+                effect_row = cursor.execute(sql,(collect_id, sid))
+                conn.commit()
+        finally:
+            cursor.close()
+        print(effect_row)
+        return jsonify({'code' : 0, 'msg': 'succeed'})
+
+    
+    elif request.method == 'DELETE':
+        res_dir = request.get_json()
+        if res_dir is None:
+            return jsonify(code = 4103,msg = "未接收到参数")
+        coid = res_dir.get("coid")
+        try:
+            with conn.cursor() as cursor:
+                sql = 'delete from collect where coid = %s'
+                effect_row = cursor.execute(sql,(coid))
+                conn.commit()
+        finally:
+            cursor.close()
+        print(effect_row)
+        return jsonify({'code' : 0, 'msg': 'succeed'})
 
 
 @app.route('/download/<string:filename>', methods=['GET'])
@@ -267,3 +380,6 @@ def show_photo(folder, filename):
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1',debug=True)
+
+
+# 没有权限认证
