@@ -121,12 +121,12 @@ def get_home():
 * @description 获取表情包分类的接口
 * @method get
 * @url http://111.230.153.254/api/category
-* @return {"code":0,"data":[{"cid":1,"category":"杰尼龟"},{"cid":"1","category":"杰尼龟"}]}
+* @return {"code":0,"data":[{"cid":1,"category":"杰尼龟","sid":1,"url":"http://111.230.153.254/large/001Funny/Funny00020.gif"},{"cid":1,"category":"杰尼龟","sid":1,"url":"http://111.230.153.254/large/001Funny/Funny00020.gif"}]}
 * @return_param code int 状态
 * @return_param cid int 分类id
 * @return_param category string 分类名称
 * @return_param sid int 表情id
-* @return_param url string 表情url 
+* @return_param url string 表情url
 */
 '''
 
@@ -167,7 +167,7 @@ def get_categories():
 * @url http://111.230.153.254/api/category/<int:cid>
 * @param limit 必选 int 每页条数
 * @param page 必选 int 页数
-* @return {"code":0,"cid" : 12, "data":[{"sid":1,"url":"http://111.230.153.254/large/052Squirtle_%E6%9D%B0%E5%B0%BC%E9%BE%9F/Squirtle22.JPG"},{"cid":"1","url":"http://111.230.153.254/large/052Squirtle_%E6%9D%B0%E5%B0%BC%E9%BE%9F/Squirtle22.JPG"}]}
+* @return {"code":0,"cid" : 12, "data":[{"sid":1,"url":"http://111.230.153.254/large/052Squirtle_%E6%9D%B0%E5%B0%BC%E9%BE%9F/Squirtle22.JPG"},{"sid":"1","url":"http://111.230.153.254/large/052Squirtle_%E6%9D%B0%E5%B0%BC%E9%BE%9F/Squirtle22.JPG"}]}
 * @return_param code int 状态
 * @return_param cid int 分类id
 * @return_param sid int 表情id
