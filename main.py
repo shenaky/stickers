@@ -77,14 +77,16 @@ def login():
         print(r.json())
         return jsonify(code = 4103,msg = "openid获取失败")
     
+    # 检测是否注册
     try:
         with conn.cursor() as cursor:
             sql = 'SELECT uid FROM users WHERE openid = %s'
             cursor.execute(sql, (openid))
-            result = cursor.fetchone()
+            result = cursor.fetchall()
         conn.commit()
     finally:
         cursor.close()
+    print(result)
     if not result:
         try:
             cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid))
@@ -94,14 +96,27 @@ def login():
             conn.rollback()
         finally:
             cursor.close()
-    
+        
+        try:
+            with conn.cursor() as cursor:
+                sql = 'SELECT uid FROM users WHERE openid = %s'
+                cursor.execute(sql, (openid))
+                result = cursor.fetchall()
+            conn.commit()
+        finally:
+            cursor.close()
+        item = result[0]
+        uid = item[0]
+    else:
+        item = result[0]
+        uid = item[0]
     #创建token
-    token = create_token(openid)
+    token = create_token(uid)
     print(token)
 
     #把token返回给前端
     # return jsonify(code=0,msg="succeed",data=token)
-    return jsonify({'code' : 0, 'msg': 'success', 'token': list})
+    return jsonify({'code' : 0, 'msg': 'success', 'token': token})
 
 '''
 /**
@@ -156,7 +171,7 @@ def get_home():
 */
 '''
 
-@app.route('/api/category', methods=['GET', 'POST'])
+@app.route('/api/category', methods=['GET'])
 def get_categories():
     if request.method == 'GET':
         try:
@@ -224,20 +239,51 @@ def get_category(cid):
     
     # return jsonify({'task': resultall})
 
-@app.route('/collection', methods=['GET', 'POST'])
-def get_collection():
-    if request.method == 'POST':
-        pass
+'''
+/**
+* showdoc
+* @catalog 收藏接口
+* @title 获取所有收藏夹
+* @description 获取所有收藏夹的接口
+* @method get
+* @url http://111.230.153.254/api/collection
+* @header token 必选 sting token
+* @return {"code":0, "data":[{"collect_id":1,"collect_name":"收藏夹"},{"collect_id":1,"collect_name":"收藏夹"}]}
+* @return_param code int 状态
+* @return_param collect_id int 收藏夹id
+* @return_param collect_name string 收藏夹名称
+* @number 20
+*/
+/**
+* showdoc
+* @catalog 收藏接口
+* @title 新建收藏夹
+* @description 新建收藏夹的接口
+* @method post
+* @url http://111.230.153.254/api/collection
+* @header token 必选 sting 认证token
+* @param collect_name 必选 string 收藏夹名称
+* @return {"code" : 0, "msg": "succeed"}
+* @return_param code int 状态
+* @return_param msg string 信息
+* @number 21
+*/
+/**
+* showdoc
+* @catalog 收藏接口
+* @title 删除收藏夹
+* @description 删除收藏夹的接口
+* @method delete
+* @url http://111.230.153.254/api/collection
+* @header token 必选 sting 认证token
+* @param collect_id 必选 int 收藏夹id
+* @return {"code" : 0, "msg": "succeed"}
+* @return_param code int 状态
+* @return_param msg string 信息
+* @number 22
+*/
+'''
 
-@app.route('/make', methods=['GET', 'POST'])
-def get_make():
-    if request.method == 'POST':
-        print(type(request.get_data()))
-        print(json.loads(request.get_data()))
-        return '这是一个post请求 m'
-    else:
-        print(request.json())
-        return '这是一个get请求 m'
 
 @app.route('/api/collection', methods=['GET','DELETE','POST'])
 @login_required
@@ -247,7 +293,7 @@ def get_allfiles():
     uid = verify_token(token)
     print(uid)
     if not uid:
-        return jsonify(code = 4100,msg = "token过期")
+        return jsonify(code = 4100,msg = "token失效")
 
     if request.method == 'GET':
         try:
@@ -298,7 +344,51 @@ def get_allfiles():
         print(effect_row)
         return jsonify({'code' : 0, 'msg': 'succeed'})
 
-
+'''
+/**
+* showdoc
+* @catalog 收藏接口
+* @title 获取收藏夹中的表情
+* @description 获取收藏夹中的表情的接口
+* @method get
+* @url http://111.230.153.254/api/collection/<int:collect_id>
+* @header token 必选 sting token
+* @return {"code":0, "data":[{"coid":1,"sid": 1, "url": "url"},{"coid":1,"sid": 1, "url": "url"}]}
+* @return_param code int 状态
+* @return_param coid int 收藏id
+* @return_param sid int 表情id
+* @return_param url string 表情url
+* @number 23
+*/
+/**
+* showdoc
+* @catalog 收藏接口
+* @title 新建收藏
+* @description 新建收藏的接口
+* @method post
+* @url http://111.230.153.254/api/collection/<int:collect_id>
+* @header token 必选 sting 认证token
+* @param sid 必选 int 表情id
+* @return {"code" : 0, "msg": "succeed"}
+* @return_param code int 状态
+* @return_param msg string 信息
+* @number 2
+*/
+/**
+* showdoc
+* @catalog 收藏接口
+* @title 删除收藏夹
+* @description 删除收藏夹的接口
+* @method delete
+* @url http://111.230.153.254/api/collection/<int:collect_id>
+* @header token 必选 sting 认证token
+* @param coid 必选 int 表情id
+* @return {"code" : 0, "msg": "succeed"}
+* @return_param code int 状态
+* @return_param msg string 信息
+* @number 22
+*/
+'''
 
 @app.route('/api/collection/<int:collect_id>', methods=['GET','DELETE','POST'])
 @login_required
