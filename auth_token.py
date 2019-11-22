@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 from flask import request,jsonify,current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
