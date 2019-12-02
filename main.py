@@ -10,6 +10,8 @@ from auth_token import create_token,verify_token,login_required
 
 app = Flask(__name__)
 IMAGE_FOLDER = 'ChineseBQB'
+SECRET_KEY = 'stickersormeme'
+app.config["SECRET_KEY"] = SECRET_KEY
 app.config['IMAGE_FOLDER'] = IMAGE_FOLDER
 app.config['JSON_AS_ASCII'] = False
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -20,7 +22,7 @@ cursor =conn.cursor()
 
 @app.route("/")
 def hello():
-    return "<h1 style='color:blue'>Hello Tsdfhere!</h1>"
+    return "<h1 style='color:blue'>Hello There cur!</h1>"
 
 '''
 /**
@@ -52,11 +54,6 @@ def login():
     #获取前端传过来的参数
     js_code = res_dir.get("js_code")
     print(js_code)
-    # try:
-    #     js_code = request.args.get('js_code')
-    # except:
-    #     return jsonify(code = 4103,msg = "未接收到参数")
-    # print(js_code)
     
     #校验参数
     url = 'https://api.weixin.qq.com/sns/jscode2session'
@@ -76,31 +73,33 @@ def login():
     except:
         print(r.json())
         return jsonify(code = 4103,msg = "openid获取失败")
-    
+    print(openid)
     # 检测是否注册
     try:
         with conn.cursor() as cursor:
             sql = 'SELECT uid FROM users WHERE openid = %s'
-            cursor.execute(sql, (openid))
+            cursor.execute(sql, (openid,))
             result = cursor.fetchall()
         conn.commit()
     finally:
         cursor.close()
-    print(result)
     if not result:
         try:
+            cursor = conn.cursor()
             cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid))
             cursor.connection.commit()
         except:
             print("sql insert error")
             conn.rollback()
+            # with conn.cursor() as cursor:
+            #     cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid,))
+            # conn.commit()
         finally:
             cursor.close()
-        
         try:
             with conn.cursor() as cursor:
                 sql = 'SELECT uid FROM users WHERE openid = %s'
-                cursor.execute(sql, (openid))
+                cursor.execute(sql, (openid,))
                 result = cursor.fetchall()
             conn.commit()
         finally:
@@ -372,12 +371,12 @@ def get_allfiles():
 * @return {"code" : 0, "msg": "succeed"}
 * @return_param code int 状态
 * @return_param msg string 信息
-* @number 2
+* @number 24
 */
 /**
 * showdoc
 * @catalog 收藏接口
-* @title 删除收藏夹
+* @title 删除收藏
 * @description 删除收藏夹的接口
 * @method delete
 * @url http://111.230.153.254/api/collection/<int:collect_id>
@@ -386,7 +385,7 @@ def get_allfiles():
 * @return {"code" : 0, "msg": "succeed"}
 * @return_param code int 状态
 * @return_param msg string 信息
-* @number 22
+* @number 25
 */
 '''
 

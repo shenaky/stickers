@@ -31,10 +31,18 @@ CREATE TABLE users (
 
 CREATE TABLE collect
  (
-    collect_id BIGINT(7) NOT NULL AUTO_INCREMENT comment '收藏ID', 
-    collect_name VARCHAR(255) comment '收藏名', 
-    sid BIGINT(7) comment '表情id', 
-    uid BIGINT(7) comment '用户id', 
+    coid BIGINT(7) NOT NULL AUTO_INCREMENT,
+    collect_id BIGINT(7),
+    sid BIGINT(7),
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (coid)
+ );
+
+CREATE TABLE collection
+ (
+    collect_id BIGINT(7) NOT NULL AUTO_INCREMENT,
+    collect_name VARCHAR(255),
+    uid BIGINT(7),
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (collect_id)
  );

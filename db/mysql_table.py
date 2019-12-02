@@ -14,6 +14,7 @@ data = cursor.fetchone()
 print ("database version : %s" % data)
 
 def table_s_c():
+    count = 0
     with open('data.json', 'r') as f:
         data = json.load(f)
     for dict in data:
@@ -23,7 +24,8 @@ def table_s_c():
         # try:
         cursor.execute("SELECT * FROM categories WHERE category = %s", (category))
         if cursor.rowcount == 0:
-            print('ss')
+            count += 1
+            print(count)
             cursor.execute("INSERT INTO categories (category, folder) VALUES (%s, %s)", (category, folder))
             cursor.connection.commit()
         # except:
@@ -64,8 +66,54 @@ def table_b():
             cursor.execute("INSERT INTO belong (sid, cid) VALUES (%s, %s)", (sid, cid))
             cursor.connection.commit()
 
+def table_s_update():
+    sql = 'SELECT sid,filename,category FROM stickers'
+    cursor.execute(sql)
+    resultall = cursor.fetchall()
+    conn.commit()
+    for item in resultall:
+        sid= item[0]
+        filename = item[1]
+        category = item[2]
+        print(filename)
+        cursor.execute("SELECT folder2 FROM categories WHERE category  = %s", (category))
+        result = cursor.fetchall()
+        it = result[0]
+        folder2 = it[0]
+        url = 'http://111.230.153.254/large/' + folder2 + '/' + filename
+        print(url)
+        cursor.execute("UPDATE stickers SET url =%s WHERE sid  = %s", (url, sid))
+        cursor.connection.commit()
+
+def folder_():
+    sql = 'SELECT folder,folder2 FROM categories'
+    cursor.execute(sql)
+    resultall = cursor.fetchall()
+    conn.commit()
+    for item in resultall:
+        folder1 = item[0]
+        folder2 = item[1]
+        path = os.getcwd()
+        os.rename(os.path.join(path, 'ChineseBQB', folder1), os.path.join(path, 'ChineseBQB', folder2))
+    
+def ss():
+    openid = 'dgbndybdmbfd'
+    cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid))
+    cursor.connection.commit()
+
+def test():
+    t = "232sdag_个电话给"
+    u = t.split('_')
+    t = u[0]
+    print(t)
+
 def main():
-    table_s_c()
+    ss()
+    # test()
+    # table_b_update()
+    # cursor.execute("UPDATE categories SET folder2 =%s WHERE cid  = %s", ('015GoldenCuratorPanda', 15))
+    # cursor.connection.commit()
+    # table_s_c()
     # table_b()
     # cursor.execute("SELECT * FROM stickers WHERE category  = %s", ('猫眼三姐妹'))
     # result = cursor.fetchall()
