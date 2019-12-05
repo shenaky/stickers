@@ -2,7 +2,8 @@
 import json
 import os
 import re
-path='../ChineseBQB'
+
+path = '../ChineseBQB'
 list = []
 for name in os.listdir(path):
     dict = {}
@@ -15,7 +16,7 @@ for name in os.listdir(path):
         memelist.append(memeName)
     dict['meme'] = memelist
     list.append(dict)
-print(json.dumps(list,ensure_ascii=False,indent=4))
+print(json.dumps(list, ensure_ascii=False, indent=4))
 
 print(len(list))
 # Writing JSON data
@@ -30,6 +31,3 @@ with open('data.json', 'r') as f:
     data = json.load(f)
 print('btrshy')
 print(list[34])
-
-
- 

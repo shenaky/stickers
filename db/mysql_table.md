@@ -29,20 +29,33 @@ CREATE TABLE users (
     PRIMARY KEY (uid));
 
 
-CREATE TABLE collect
- (
+CREATE TABLE collect(
     coid BIGINT(7) NOT NULL AUTO_INCREMENT,
     collect_id BIGINT(7),
     sid BIGINT(7),
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (coid)
- );
+    PRIMARY KEY (coid));
 
-CREATE TABLE collection
- (
+CREATE TABLE collection (
     collect_id BIGINT(7) NOT NULL AUTO_INCREMENT,
     collect_name VARCHAR(255),
     uid BIGINT(7),
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (collect_id)
- );
+    PRIMARY KEY (collect_id));
+ 
+ CREATE TABLE templates (
+    tid BIGINT(7) NOT NULL AUTO_INCREMENT, 
+    url VARCHAR(255),
+    filename VARCHAR(100),
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    PRIMARY KEY (tid));
+
+ CREATE TABLE make (
+    mid BIGINT(7) NOT NULL AUTO_INCREMENT,
+    uid BIGINT(7),
+    tid BIGINT(7),
+    url VARCHAR(255),
+    filename VARCHAR(100),
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (mid),
+    FOREIGN KEY(uid) REFERENCES users(uid));

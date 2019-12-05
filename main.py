@@ -1,35 +1,37 @@
 # -*- coding:utf-8 -*-
+import datetime
+import random
 
-from flask import Flask,request,jsonify,send_from_directory,make_response
-from random import shuffle
-import json
+from flask import Flask, request, jsonify, send_from_directory, make_response
 import os
 import requests
-import pymysql
-from auth_token import create_token,verify_token,login_required
+from werkzeug.utils import secure_filename
+from auth_token import create_token, verify_token, login_required
+from db_execute import execute_all, execute_eff
 
 app = Flask(__name__)
 IMAGE_FOLDER = 'ChineseBQB'
 SECRET_KEY = 'stickersormeme'
+UPLOAD_FOLDER = 'ChineseBQB/make'
 app.config["SECRET_KEY"] = SECRET_KEY
 app.config['IMAGE_FOLDER'] = IMAGE_FOLDER
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['JSON_AS_ASCII'] = False
 basedir = os.path.abspath(os.path.dirname(__file__))
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'JPG', 'PNG', 'gif', 'GIF'])
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'JPG', 'PNG', 'gif', 'GIF'}
 
-conn = pymysql.connect(host='111.230.153.254',port=3306,user='stickers', passwd='stickers', db='stickers',charset='utf8')
-cursor =conn.cursor()
 
 @app.route("/")
 def hello():
-    return "<h1 style='color:blue'>Hello There cur!</h1>"
+    return "<h1 style='color:blue'>Hello There cur util pool c!</h1>"
+
 
 '''
 /**
 * showdoc
 * @catalog 用户相关
 * @title 用户登录
-* @description 用户登录的接口
+* @description 用户登录的接口 
 * @method post
 * @url  http://111.230.153.254/api/login
 * @param js_code 必选 string 登录时获取的 code
@@ -40,82 +42,63 @@ def hello():
 * @number 1
 */
 '''
-@app.route("/api/login",methods=["POST"])
+
+
+@app.route("/api/login", methods=["POST"])
 def login():
-    '''
+    """
     用户登录
     :return:token
-    '''
+    """
     res_dir = request.get_json()
     if res_dir is None:
-        #这里的code，依然推荐用一个文件管理状态
-        return jsonify(code = 4103,msg = "未接收到参数")
-    
-    #获取前端传过来的参数
+        # 这里的code，依然推荐用一个文件管理状态
+        return jsonify(code=4103, msg="未接收到参数")
+
+    # 获取前端传过来的参数
     js_code = res_dir.get("js_code")
     print(js_code)
-    
-    #校验参数
+
+    # 校验参数
     url = 'https://api.weixin.qq.com/sns/jscode2session'
     querystring = {
-            # "appid": "wx1f343a5a5e9d83e6",
-            # "secret": "c9b6db0afb01037e9371241a1ea6b11b",
-            "appid": "wxd257872efc01ad6c",
-            "secret": "8b48a7c1e2c68c6f7c78546a22e2c48f",
-            "js_code": js_code,
-            "grant_type": "authorization_code"
-        }
+        "appid": "wxd257872efc01ad6c",
+        "secret": "8b48a7c1e2c68c6f7c78546a22e2c48f",
+        "js_code": js_code,
+        "grant_type": "authorization_code"
+    }
     r = requests.get(url, params=querystring)
-    print(r.text)
-    print(r.json())
-    try:
+    # try:
+    #     openid = r.json()['openid']
+    # except:
+    #     print(r.json())
+    #     return jsonify(code=4103, msg="openid获取失败")
+    if 'openid' in r.json():
         openid = r.json()['openid']
-    except:
+    else:
         print(r.json())
-        return jsonify(code = 4103,msg = "openid获取失败")
+        return jsonify(code=4103, msg="openid获取失败")
     print(openid)
+
     # 检测是否注册
-    try:
-        with conn.cursor() as cursor:
-            sql = 'SELECT uid FROM users WHERE openid = %s'
-            cursor.execute(sql, (openid,))
-            result = cursor.fetchall()
-        conn.commit()
-    finally:
-        cursor.close()
+    sql = 'SELECT uid FROM users WHERE openid = %s'
+    result = execute_all(sql, (openid,))
     if not result:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid))
-            cursor.connection.commit()
-        except:
-            print("sql insert error")
-            conn.rollback()
-            # with conn.cursor() as cursor:
-            #     cursor.execute("INSERT INTO users (openid) VALUES (%s)", (openid,))
-            # conn.commit()
-        finally:
-            cursor.close()
-        try:
-            with conn.cursor() as cursor:
-                sql = 'SELECT uid FROM users WHERE openid = %s'
-                cursor.execute(sql, (openid,))
-                result = cursor.fetchall()
-            conn.commit()
-        finally:
-            cursor.close()
+        sql = 'INSERT INTO users (openid) VALUES (%s)'
+        execute_eff(sql, openid)
+        sql = 'SELECT uid FROM users WHERE openid = %s'
+        result = execute_all(sql, (openid,))
         item = result[0]
         uid = item[0]
     else:
         item = result[0]
         uid = item[0]
-    #创建token
+    # 创建token
     token = create_token(uid)
     print(token)
 
-    #把token返回给前端
-    # return jsonify(code=0,msg="succeed",data=token)
-    return jsonify({'code' : 0, 'msg': 'success', 'token': token})
+    return jsonify({'code': 0, 'msg': 'success', 'token': token})
+
 
 '''
 /**
@@ -132,26 +115,20 @@ def login():
 */
 '''
 
+
 @app.route('/api/home', methods=['GET'])
 def get_home():
     limit = 18
-    try:
-        with conn.cursor() as cursor:
-            sql = 'SELECT sid,url FROM stickers ORDER BY RAND() LIMIT %s'
-            cursor.execute(sql, (limit))
-            resultall = cursor.fetchall()
-            # print(resultall)
-        conn.commit()
-    finally:
-        cursor.close()
-    list = []
+    sql = 'SELECT sid,url FROM stickers ORDER BY RAND() LIMIT %s'
+    resultall = execute_all(sql, limit)
+    lis = []
     for item in resultall:
-        dict = {}
-        dict['sid'] = item[0]
-        dict['url'] = item[1]
-        list.append(dict)
-    # shuffle(list) 
-    return jsonify({'code' : 0, 'data': list})
+        dic = {}
+        dic['sid'] = item[0]
+        dic['url'] = item[1]
+        lis.append(dic)
+    return jsonify({'code': 0, 'data': lis})
+
 
 '''
 /**
@@ -170,32 +147,27 @@ def get_home():
 */
 '''
 
+
 @app.route('/api/category', methods=['GET'])
 def get_categories():
     if request.method == 'GET':
-        try:
-            with conn.cursor() as cursor:
-                sql = '''SELECT categories.cid,categories.category,any_value(stickers.sid),any_value(url)
-                        FROM stickers,belong,categories
-                        WHERE stickers.sid = belong.sid AND belong.cid = categories.cid
-                        GROUP BY cid,category'''
-                cursor.execute(sql)
-                resultall = cursor.fetchall()
-                print(resultall)
-            conn.commit()
-        finally:
-            cursor.close()
-        list = []
+        sql = '''SELECT categories.cid,categories.category,any_value(stickers.sid),any_value(url)
+                 FROM stickers,belong,categories
+                 WHERE stickers.sid = belong.sid AND belong.cid = categories.cid
+                 GROUP BY cid,category'''
+        resultall = execute_all(sql)
+        lis = []
         for item in resultall:
-            dict = {}
-            dict['category'] = item[1]
-            dict['cid'] = item[0]
-            dict['sid'] = item[2]
-            dict['url'] = item[3]
-            list.append(dict)
-        return jsonify({'code' : 0, 'data': list})
+            dic = {}
+            dic['category'] = item[1]
+            dic['cid'] = item[0]
+            dic['sid'] = item[2]
+            dic['url'] = item[3]
+            lis.append(dic)
+        return jsonify({'code': 0, 'data': lis})
     else:
         return '这是一个get请求'
+
 
 '''
 /**
@@ -215,28 +187,22 @@ def get_categories():
 */
 '''
 
+
 @app.route('/api/category/<int:cid>', methods=['GET'])
 def get_category(cid):
     limit = int(request.args.get('limit'))
     page = int(request.args.get('page'))
     offset = limit * page
-    try:
-        with conn.cursor() as cursor:
-            sql = 'SELECT sid,url FROM stickers WHERE sid IN (SELECT sid FROM belong WHERE cid = %s) ORDER BY sid DESC LIMIT %s OFFSET %s'
-            cursor.execute(sql, (cid, limit, offset))
-            resultall = cursor.fetchall()
-        conn.commit()
-    finally:
-        cursor.close()
-    list = []
+    sql = 'SELECT sid,url FROM stickers WHERE sid IN (SELECT sid FROM belong WHERE cid = %s) ORDER BY sid DESC LIMIT %s OFFSET %s'
+    resultall = execute_all(sql, (cid, limit, offset))
+    lis = []
     for item in resultall:
-        dict = {}
-        dict['sid'] = item[0]
-        dict['url'] = item[1]
-        list.append(dict)
-    return jsonify({'code' : 0, 'cid' : cid, 'data': list})
-    
-    # return jsonify({'task': resultall})
+        dic = {}
+        dic['sid'] = item[0]
+        dic['url'] = item[1]
+        lis.append(dic)
+    return jsonify({'code': 0, 'cid': cid, 'data': lis})
+
 
 '''
 /**
@@ -284,64 +250,48 @@ def get_category(cid):
 '''
 
 
-@app.route('/api/collection', methods=['GET','DELETE','POST'])
+@app.route('/api/collection', methods=['GET', 'DELETE', 'POST'])
 @login_required
 def get_allfiles():
-
     token = request.headers["token"]
     uid = verify_token(token)
     print(uid)
     if not uid:
-        return jsonify(code = 4100,msg = "token失效")
+        return jsonify(code=4100, msg="token失效")
 
     if request.method == 'GET':
-        try:
-            with conn.cursor() as cursor:
-                sql = 'SELECT collect_id,collect_name FROM collection WHERE uid = %s'
-                cursor.execute(sql,(uid))
-                resultall = cursor.fetchall()
-        finally:
-            cursor.close()
-        list = []
+        sql = 'SELECT collect_id,collect_name FROM collection WHERE uid = %s'
+        resultall = execute_all(sql, uid)
+        lis = []
         for item in resultall:
-            dict = {}
-            dict['collect_id'] = item[0]
-            dict['collect_name'] = item[1]
-            list.append(dict)
-        return jsonify({'code' : 0, 'data': list})
+            dic = {}
+            dic['collect_id'] = item[0]
+            dic['collect_name'] = item[1]
+            lis.append(dic)
+        return jsonify({'code': 0, 'data': lis})
 
     elif request.method == 'DELETE':
         res_dir = request.get_json()
         if res_dir is None:
-            return jsonify(code = 4103,msg = "未接收到参数")
+            return jsonify(code=4103, msg="未接收到参数")
         collect_id = res_dir.get("collect_id")
-        try:
-            with conn.cursor() as cursor:
-                sql = 'delete from collection where collect_id = %s'
-                effect_row = cursor.execute(sql,(collect_id))
-                sql = 'delete from collect where collect_id = %s'
-                effect_row = cursor.execute(sql,(collect_id))
-                conn.commit()
-                #print(effect_row) 
-        finally:
-            cursor.close()
+        sql = 'delete from collection where collect_id = %s'
+        execute_eff(sql, collect_id)
+        sql = 'delete from collect where collect_id = %s'
+        effect_row = execute_eff(sql, collect_id)
         print(effect_row)
-        return jsonify({'code' : 0, 'msg': 'succeed'})
+        return jsonify({'code': 0, 'msg': 'succeed'})
 
     elif request.method == 'POST':
         res_dir = request.get_json()
         if res_dir is None:
-            return jsonify(code = 4103,msg = "未接收到参数")
+            return jsonify(code=4103, msg="未接收到参数")
         collect_name = res_dir.get("collect_name")
-        try:
-            with conn.cursor() as cursor:
-                sql = "INSERT INTO collection (uid, collect_name) VALUES (%s, %s)"
-                effect_row = cursor.execute(sql,(uid, collect_name))
-                conn.commit()
-        finally: 
-            cursor.close()
+        sql = "INSERT INTO collection (uid, collect_name) VALUES (%s, %s)"
+        effect_row = execute_eff(sql, (uid, collect_name))
         print(effect_row)
-        return jsonify({'code' : 0, 'msg': 'succeed'})
+        return jsonify({'code': 0, 'msg': 'succeed'})
+
 
 '''
 /**
@@ -389,57 +339,141 @@ def get_allfiles():
 */
 '''
 
-@app.route('/api/collection/<int:collect_id>', methods=['GET','DELETE','POST'])
+
+@app.route('/api/collection/<int:collect_id>', methods=['GET', 'DELETE', 'POST'])
 @login_required
 def get_file(collect_id):
     if request.method == 'GET':
-        try:
-            with conn.cursor() as cursor:
-                sql = 'SELECT coid,stickers.sid,url FROM collect,stickers WHERE stickers.sid = collect.sid AND collect_id = %s'
-                cursor.execute(sql,(collect_id))
-                resultall = cursor.fetchall()
-        finally:
-            cursor.close()
-        list = []
+        sql = 'SELECT coid,stickers.sid,url FROM collect,stickers WHERE stickers.sid = collect.sid AND collect_id = %s'
+        resultall = execute_all(sql, collect_id)
+        lis = []
         for item in resultall:
-            dict = {}
-            dict['coid'] = item[0]
-            dict['sid'] = item[1]
-            dict['url'] = item[2]
-            list.append(dict)
-        return jsonify({'code' : 0, 'data': list})
-    
+            dic = {}
+            dic['coid'] = item[0]
+            dic['sid'] = item[1]
+            dic['url'] = item[2]
+            lis.append(dic)
+        return jsonify({'code': 0, 'data': lis})
 
     elif request.method == 'POST':
         res_dir = request.get_json()
         if res_dir is None:
-            return jsonify(code = 4103,msg = "未接收到参数")
+            return jsonify(code=4103, msg="未接收到参数")
         sid = res_dir.get("sid")
-        try:
-            with conn.cursor() as cursor:
-                sql = "INSERT INTO collect (collect_id, sid) VALUES (%s, %s)"
-                effect_row = cursor.execute(sql,(collect_id, sid))
-                conn.commit()
-        finally:
-            cursor.close()
+        sql = "INSERT INTO collect (collect_id, sid) VALUES (%s, %s)"
+        effect_row = execute_eff(sql, (collect_id, sid))
         print(effect_row)
-        return jsonify({'code' : 0, 'msg': 'succeed'})
+        return jsonify({'code': 0, 'msg': 'succeed'})
 
-    
     elif request.method == 'DELETE':
         res_dir = request.get_json()
         if res_dir is None:
-            return jsonify(code = 4103,msg = "未接收到参数")
+            return jsonify(code=4103, msg="未接收到参数")
         coid = res_dir.get("coid")
-        try:
-            with conn.cursor() as cursor:
-                sql = 'delete from collect where coid = %s'
-                effect_row = cursor.execute(sql,(coid))
-                conn.commit()
-        finally:
-            cursor.close()
+        sql = 'delete from collect where coid = %s'
+        effect_row = execute_eff(sql, coid)
         print(effect_row)
-        return jsonify({'code' : 0, 'msg': 'succeed'})
+        return jsonify({'code': 0, 'msg': 'succeed'})
+
+
+'''
+/**
+* showdoc
+* @catalog 制作接口
+* @title 获取表情包模板
+* @description 获取表情包模板的接口
+* @method get
+* @url http://111.230.153.254/api/temps
+* @param limit 必选 int 每页条数
+* @param page 必选 int 页数
+* @return {"code":0, "data":[{"tid":1,"url":"http://111.230.153.254/large/temps/ceeb653ely1fkfupduos9j208c08cgm7.jpg"},{"tid":1,"url":"http://111.230.153.254/large/temps/ceeb653ely1fkfupduos9j208c08cgm7.jpg"}]}
+* @return_param code int 状态
+* @return_param tid int 模板id
+* @return_param url string url
+* @number 27
+*/
+'''
+
+
+@app.route('/api/temps', methods=['GET'])
+def get_temps():
+    limit = int(request.args.get('limit'))
+    page = int(request.args.get('page'))
+    offset = limit * page
+    sql = 'SELECT tid,url FROM templates ORDER BY tid ASC LIMIT %s OFFSET %s'
+    resultall = execute_all(sql, (limit, offset))
+    lis = []
+    for item in resultall:
+        dic = {}
+        dic['tid'] = item[0]
+        dic['url'] = item[1]
+        lis.append(dic)
+    return jsonify({'code': 0, 'data': lis})
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+def create_uuid():
+    # 生成唯一的图片的名称字符串，防止图片显示时的重名问题
+    nowTime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # 生成当前时间
+    randomNum = random.randint(0, 100)  # 生成的随机整数n，其中0<=n<=100
+    if randomNum <= 10:
+        randomNum = str(0) + str(randomNum)
+    uniqueNum = str(nowTime) + str(randomNum)
+    return uniqueNum
+
+
+@app.route('/api/make', methods=['GET', 'DELETE', 'POST'])
+@login_required
+def get_make():
+    token = request.headers["token"]
+    uid = verify_token(token)
+    print(uid)
+    if not uid:
+        return jsonify(code=4100, msg="token失效")
+
+    if request.method == 'GET':
+        sql = 'SELECT mid,tid,url FROM make WHERE uid = %s'
+        resultall = execute_all(sql, uid)
+        lis = []
+        for item in resultall:
+            dic = {}
+            dic['mid'] = item[0]
+            dic['tid'] = item[1]
+            dic['url'] = item[2]
+            lis.append(dic)
+        return jsonify({'code': 0, 'data': lis})
+
+    elif request.method == 'POST':
+        file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+        f = request.files['image']
+        if f and allowed_file(f.filename):
+            fname = secure_filename(f.filename)
+            print(fname)
+            ext = fname.rsplit('.', 1)[1]
+            new_filename = create_uuid() + '.' + ext
+            f.save(os.path.join(file_dir, new_filename))
+            filename = new_filename
+            url = 'http://111.230.153.254/large/' + 'make' + '/' + filename
+            sql = "INSERT INTO make (uid, url, filename) VALUES (%s, %s, %s)"
+            effect_row = execute_eff(sql, (uid, url, filename))
+            return jsonify({"code": 0, "msg": "上传成功"})
+        else:
+            return jsonify({"code": 1001, "msg": "上传失败"})
+
+    elif request.method == 'DELETE':
+        res_dir = request.get_json()
+        if res_dir is None:
+            return jsonify(code=4103, msg="未接收到参数")
+        mid = res_dir.get("mid")
+        sql = 'delete from make where mid = %s AND uid = %s'
+        effect_row = execute_eff(sql, (mid, uid))
+        print(effect_row)
+        return jsonify({'code': 0, 'msg': 'succeed'})
 
 
 @app.route('/download/<string:filename>', methods=['GET'])
@@ -448,6 +482,7 @@ def download(filename):
         if os.path.isfile(os.path.join('test', filename)):
             return send_from_directory('test', filename, as_attachment=True)
         pass
+
 
 # @app.route('/images/<string:folder>/<string:filename>', methods=['GET'])
 # def get_download(filename):
@@ -474,9 +509,7 @@ def show_photo(folder, filename):
         pass
 
 
-
 if __name__ == "__main__":
-    app.run(host='127.0.0.1',debug=True)
-
+    app.run(host='127.0.0.1', debug=True)
 
 # 没有权限认证
