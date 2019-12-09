@@ -117,6 +117,19 @@ def updat_url_temps():
     cursor.connection.commit()
 
 
+def updat_title_temps():
+    with open('data_title.json', 'r', encoding='utf-8') as f:
+        temps = json.load(f)
+    for index, temp in enumerate(temps):
+        filename = temp['filename']
+        title = temp['title']
+        print(filename)
+        print(title)
+        print(index)
+        cursor.execute("UPDATE templates SET title = %s WHERE filename  = %s", (title, filename))
+    cursor.connection.commit()
+
+
 def version():
     cursor.execute("select VERSION()")
     data = cursor.fetchone()
@@ -125,7 +138,7 @@ def version():
 
 def main():
     version()
-    updat_url_temps()
+    updat_title_temps()
     cursor.close()
     conn.close()
     

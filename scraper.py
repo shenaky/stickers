@@ -60,6 +60,20 @@ def get_links_diy_s(url):
     return links
 
 
+def get_tags(url):
+    headers = {}
+    headers[
+        'User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36'
+    r = requests.get(url, headers=headers)
+    bsObj = BeautifulSoup(r.text)
+    tags = None
+    try:
+        tags = bsObj.findAll('img', {'class': 'ui small bordered image bqpp lazy'})
+    except:
+        print('http error')
+    return tags
+
+
 def links():
     temps = []
     for x in range(1, 40):
@@ -89,8 +103,25 @@ def download():
 # urlretrieve(image_location, 'text\jienigui.jpg')
 
 
+def temp_tags():
+    temps = []
+    for x in range(1, 40):
+        url1 = 'https://fabiaoqing.com/diy/lists/page/' + str(x) + '.html'
+        imgs = get_tags(url1)
+        for img in imgs:
+            link = img['data-original']
+            title = img['title']
+            dic = {}
+            dic['filename'] = link.split('/')[-1]
+            dic['title'] = title.split('-')[0]
+            temps.append(dic)
+    print(temps)
+    print(len(temps))
+    with open('db/data_title.json', 'w', encoding='utf-8') as f:
+        json.dump(temps, f, ensure_ascii=False, indent=4)
+
 def main():
-    download()
+    temp_tags()
 
 
 if __name__ == "__main__":

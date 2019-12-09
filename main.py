@@ -23,7 +23,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'JPG', 'PNG', 'gif', 'GIF'}
 
 @app.route("/")
 def hello():
-    return "<h1 style='color:blue'>Hello There cur util pool c!</h1>"
+    return "<h1 style='color:blue'>Hello There cur util pool one all!</h1>"
 
 
 '''
@@ -138,6 +138,8 @@ def get_home():
 * @description 获取表情包分类的接口
 * @method get
 * @url http://111.230.153.254/api/category
+* @param limit 必选 int 每页条数
+* @param page 必选 int 页数
 * @return {"code":0,"data":[{"cid":1,"category":"杰尼龟","sid":1,"url":"http://111.230.153.254/large/001Funny/Funny00020.gif"},{"cid":1,"category":"杰尼龟","sid":1,"url":"http://111.230.153.254/large/001Funny/Funny00020.gif"}]}
 * @return_param code int 状态
 * @return_param cid int 分类id
@@ -151,11 +153,15 @@ def get_home():
 @app.route('/api/category', methods=['GET'])
 def get_categories():
     if request.method == 'GET':
+        limit = int(request.args.get('limit'))
+        page = int(request.args.get('page'))
+        offset = limit * page
         sql = '''SELECT categories.cid,categories.category,any_value(stickers.sid),any_value(url)
                  FROM stickers,belong,categories
                  WHERE stickers.sid = belong.sid AND belong.cid = categories.cid
-                 GROUP BY cid,category'''
-        resultall = execute_all(sql)
+                 GROUP BY cid,category
+                 ORDER BY cid DESC LIMIT %s OFFSET %s'''
+        resultall = execute_all(sql, (limit, offset))
         lis = []
         for item in resultall:
             dic = {}
@@ -318,6 +324,7 @@ def get_allfiles():
 * @url http://111.230.153.254/api/collection/<int:collect_id>
 * @header token 必选 sting 认证token
 * @param sid 必选 int 表情id
+* @param cid 可选 int 分类id
 * @return {"code" : 0, "msg": "succeed"}
 * @return_param code int 状态
 * @return_param msg string 信息
@@ -327,11 +334,11 @@ def get_allfiles():
 * showdoc
 * @catalog 收藏接口
 * @title 删除收藏
-* @description 删除收藏夹的接口
+* @description 删除收藏的接口
 * @method delete
 * @url http://111.230.153.254/api/collection/<int:collect_id>
 * @header token 必选 sting 认证token
-* @param coid 必选 int 表情id
+* @param coid 必选 int 收藏id
 * @return {"code" : 0, "msg": "succeed"}
 * @return_param code int 状态
 * @return_param msg string 信息
@@ -359,9 +366,17 @@ def get_file(collect_id):
         res_dir = request.get_json()
         if res_dir is None:
             return jsonify(code=4103, msg="未接收到参数")
-        sid = res_dir.get("sid")
-        sql = "INSERT INTO collect (collect_id, sid) VALUES (%s, %s)"
-        effect_row = execute_eff(sql, (collect_id, sid))
+        if 'cid' in res_dir:
+            cid = res_dir.get("cid")
+            sql = '''INSERT INTO collect (collect_id, sid) 
+                     SELECT %s ,sid 
+                     FROM belong 
+                     WHERE cid = %s '''
+            effect_row = execute_eff(sql, (collect_id, cid))
+        else:
+            sid = res_dir.get("sid")
+            sql = "INSERT INTO collect (collect_id, sid) VALUES (%s, %s)"
+            effect_row = execute_eff(sql, (collect_id, sid))
         print(effect_row)
         return jsonify({'code': 0, 'msg': 'succeed'})
 
@@ -374,6 +389,83 @@ def get_file(collect_id):
         effect_row = execute_eff(sql, coid)
         print(effect_row)
         return jsonify({'code': 0, 'msg': 'succeed'})
+
+
+'''
+/**
+* showdoc
+* @catalog 接口
+* @title 搜索表情包
+* @description 搜索表情包的接口
+* @method get
+* @url http://111.230.153.254/api/search
+* @param kw 必选 string 关键词
+* @param limit 必选 int 每页条数
+* @param page 必选 int 页数
+* @return {"code":0, "data":[{"sid":1,"url":"http://111.230.153.254/large/052Squirtle/Squirtle30.JPG"},{"sid":1,"url":"http://111.230.153.254/large/052Squirtle/Squirtle30.JPG"}]}
+* @return_param code int 状态
+* @return_param sid int 表情id
+* @return_param url string url
+* @number 28
+*/
+'''
+
+
+@app.route('/api/search', methods=['GET'])
+def get_search():
+    keyword = request.args.get("kw")
+    limit = int(request.args.get('limit'))
+    page = int(request.args.get('page'))
+    offset = limit * page
+    sql = 'select sid,url from stickers where category like %s ORDER BY sid ASC LIMIT %s OFFSET %s'
+    resultall = execute_all(sql, ("%" + keyword + "%", limit, offset))
+    lis = []
+    for item in resultall:
+        dic = {}
+        dic['sid'] = item[0]
+        dic['url'] = item[1]
+        lis.append(dic)
+    return jsonify({'code': 0, 'data': lis})
+
+
+'''
+/**
+* showdoc
+* @catalog 制作接口
+* @title 搜索表情包模板
+* @description 搜索表情模板的接口
+* @method get
+* @url https://111.230.153.254/api/temps/search
+* @param kw 必选 string 关键词
+* @param limit 必选 int 每页条数
+* @param page 必选 int 页数
+* @return {"code":0, "data":[{"tid":1,"url":"http://111.230.153.254/large/temps/006tKfTcly1g1a7ucne35j30j60ewglu.jpg"},{"tid":1,"url":"http://111.230.153.254/large/temps/006tKfTcly1g1a7ucne35j30j60ewglu.jpg"}]}
+* @return_param code int 状态
+* @return_param tid int 模板id
+* @return_param url string url
+* @number 29
+*/
+'''
+
+
+@app.route('/api/temps/search', methods=['GET'])
+def get_temps_search():
+    try:
+        keyword = request.args.get("kw")
+        limit = int(request.args.get('limit'))
+        page = int(request.args.get('page'))
+    except TypeError:
+        return jsonify(code=4103, msg="缺少参数")
+    offset = limit * page
+    sql = 'select tid,url from templates where title like %s ORDER BY tid ASC LIMIT %s OFFSET %s'
+    resultall = execute_all(sql, ("%" + keyword + "%", limit, offset))
+    lis = []
+    for item in resultall:
+        dic = {}
+        dic['tid'] = item[0]
+        dic['url'] = item[1]
+        lis.append(dic)
+    return jsonify({'code': 0, 'data': lis})
 
 
 '''
